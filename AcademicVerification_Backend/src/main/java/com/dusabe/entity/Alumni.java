@@ -17,8 +17,28 @@ public class Alumni {
     @OneToOne
     @JoinColumn(name = "student_id")
     private Student student;
+    
+    // Employment tracking fields
+    private String current_employer;
+    private String position;
 
     public Alumni() {}
+
+    public String getCurrent_employer() {
+        return current_employer;
+    }
+
+    public void setCurrent_employer(String current_employer) {
+        this.current_employer = current_employer;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
 
     public Long getAlumni_id() {
         return alumni_id;
