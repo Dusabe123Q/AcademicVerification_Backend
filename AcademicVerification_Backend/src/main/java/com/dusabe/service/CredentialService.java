@@ -27,6 +27,10 @@ public class CredentialService {
         return repository.findById(id).orElse(null);
     }
 
+    public Credential getCredentialBySerialNumber(String serialNumber) {
+        return repository.findBySerialNumber(serialNumber).orElse(null);
+    }
+
     public void deleteCredential(Long id) {
         repository.deleteById(id);
     }

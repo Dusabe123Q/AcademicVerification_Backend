@@ -1,5 +1,6 @@
 package com.dusabe.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,9 +22,11 @@ public class Credential {
 
     @ManyToOne
     @JoinColumn(name = "student_id")
+    @JsonIgnore
     private Student student;
 
     @OneToMany(mappedBy = "credential")
+    @JsonIgnore
     private List<Verification> verifications;
 
     public Credential() {}

@@ -78,7 +78,7 @@ Tested all interface components for responsiveness and functionality.
 ### 4.6 Performance Testing
 System speed was tested under repeated requests.
 *   **Results**: Login takes under 2 seconds. The Dashboard loads instantly. File uploads are stable up to 10MB.
-> **[SCREENSHOT PLACEHOLDER: Browser Network Speed Screenshot]**  
+![Browser Performance](images/Screenshot%202026-04-10%20140547.png)
 > *Figure 1: Performance Test Evidence*
 
 ---

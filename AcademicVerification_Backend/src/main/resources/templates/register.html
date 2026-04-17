@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Academic Verification</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-bg">
+
+    <div class="auth-card" id="step1-card">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-dark">Create Account</h2>
+            <p class="text-muted">Register to access the portal</p>
+        </div>
+
+        <div id="alert-container-1"></div>
+
+        <form id="registerForm">
+            <div class="mb-3">
+                <label class="form-label fw-medium text-dark">Username</label>
+                <input type="text" class="form-control bg-light" id="username" required placeholder="JohnDoe">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-medium text-dark">Email address</label>
+                <input type="email" class="form-control bg-light" id="email" required placeholder="name@example.com">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-medium text-dark">Password</label>
+                <input type="password" class="form-control bg-light" id="password" required placeholder="••••••••" minlength="6">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-medium text-dark">I am a...</label>
+                <select class="form-select bg-light" id="role" required>
+                    <option value="" disabled selected>Select your role</option>
+                    <option value="ALUMNI">Alumni</option>
+                    <option value="EMPLOYER">Employer</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm" id="btn-send-otp">
+                Continue to Verification <i class="bi bi-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <p class="text-muted">Already have an account? <a href="/login" class="fw-bold text-primary text-decoration-none">Sign In</a></p>
+        </div>
+    </div>
+
+    <!-- Step 2: OTP Verification Card (Hidden initially) -->
+    <div class="auth-card" id="step2-card" style="display: none;">
+        <div class="text-center mb-4">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 2rem;">
+                <i class="bi bi-envelope-check"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Check your email</h3>
+            <p class="text-muted">We've sent a 6-digit OTP code to <strong id="verify-email-display"></strong></p>
+        </div>
+
+        <div id="alert-container-2"></div>
+
+        <form id="otpForm">
+            <div class="mb-4">
+                <label class="form-label fw-medium text-dark text-center w-100">Verification Code</label>
+                <input type="text" class="form-control form-control-lg bg-light text-center font-monospace rounded-3 border-secondary" id="otpCode" required placeholder="------" maxlength="6" style="letter-spacing: 0.5rem; font-size: 1.5rem;">
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm" id="btn-verify">
+                Verify & Register Account
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-link text-decoration-none text-muted" onclick="goBackToStep1()">
+                <i class="bi bi-arrow-left"></i> Back to Registration
+            </button>
+        </div>
+    </div>
+
+    <!-- Global Loader -->
+    <div id="global-loader">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/api.js}"></script>
+    <script th:src="@{/js/auth.js}"></script>
+    <script>
+        // Global State
+        const state = {
+            username: '',
+            email: '',
+            password: '',
+            role: ''
+        };
+
+        // Custom alert strictly for this page to target correct container
+        function showLocalAlert(containerId, message, type = 'danger') {
+            const alertContainer = document.getElementById(containerId);
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show shadow-sm text-start" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            state.username = document.getElementById('username').value.trim();
+            state.email = document.getElementById('email').value.trim();
+            state.password = document.getElementById('password').value;
+            state.role = document.getElementById('role').value;
+
+            if (!state.role) {
+                showLocalAlert('alert-container-1', 'Please select a role.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btn-send-otp');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending OTP...';
+            btn.disabled = true;
+
+            try {
+                // Call /api/auth/send-otp
+                await fetchApi('/auth/send-otp', {
+                    method: 'POST',
+                    body: JSON.stringify({ email: state.email })
+                });
+
+                // Success! Move to Step 2
+                document.getElementById('verify-email-display').innerText = state.email;
+                document.getElementById('step1-card').style.display = 'none';
+                document.getElementById('step2-card').style.display = 'block';
+                
+            } catch (err) {
+                showLocalAlert('alert-container-1', err.message || 'Failed to send OTP. Please try again.', 'danger');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const otpCode = document.getElementById('otpCode').value.trim();
+            if (otpCode.length !== 6) {
+                showLocalAlert('alert-container-2', 'OTP must be exactly 6 digits.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btn-verify');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
+            btn.disabled = true;
+
+            try {
+                // Call /api/auth/verify-and-register
+                const payload = {
+                    email: state.email,
+                    username: state.username,
+                    password: state.password,
+                    role: state.role, // "ALUMNI" or "EMPLOYER"
+                    otp: otpCode
+                };
+
+                const response = await fetchApi('/auth/verify-and-register', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                // Assuming response returns JWT just like login, or maybe just success message
+                // Let's log them in automatically if a token is returned, else redirect to login
+                const jwtToken = response.token || response.jwt || response.accessToken || response.jwtToken;
+                
+                if (jwtToken) {
+                    localStorage.setItem('jwtToken', jwtToken);
+                    localStorage.setItem('userRole', state.role);
+                    localStorage.setItem('userEmail', state.email);
+                    
+                    if (state.role === 'ALUMNI') window.location.href = '/alumni/dashboard';
+                    else if (state.role === 'EMPLOYER') window.location.href = '/verify';
+                    else window.location.href = '/admin/dashboard'; // Fallback
+                } else {
+                    // Registration succeeded but no direct token returned, redirect to login
+                    showLocalAlert('alert-container-2', 'Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => { window.location.href = '/login'; }, 2000);
+                }
+                
+            } catch (err) {
+                showLocalAlert('alert-container-2', err.message || 'Invalid OTP or registration failed.', 'danger');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        function goBackToStep1() {
+            document.getElementById('step2-card').style.display = 'none';
+            document.getElementById('step1-card').style.display = 'block';
+            document.getElementById('otpCode').value = '';
+            document.getElementById('alert-container-2').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

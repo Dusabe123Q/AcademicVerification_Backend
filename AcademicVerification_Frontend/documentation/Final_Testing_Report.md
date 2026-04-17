@@ -30,13 +30,13 @@ This report summarizes the activities performed during Phase 10 (Testing & Debug
 
 ### 3.1 Strategy & Planning
 We defined the critical success factors as: zero unauthorized access, 100% database persistence, and successful OTP delivery.
-> **[IMAGE PLACEHOLDER: Paste Screenshot of Homepage here]**
+![Homepage](images/home(welcome.png)
 > *Figure 1: Initial System State for Testing*
 
 ### 3.2 Backend Unit Testing
 Testing the internal services to ensure data is saved correctly. Each method in the `AlumniService` and `CredentialService` was verified.
 *   **Result**: All primary service methods passed. SQL Queries are optimized.
-> **[IMAGE PLACEHOLDER: Paste Screenshot of IDE Console or Unit Test results here]**
+![Backend Terminal](images/academicverify.png)
 > *Figure 2: Service Layer Verification*
 
 ### 3.3 Postman API Collection
@@ -44,14 +44,14 @@ Verified 14 REST endpoints including:
 *   `POST /api/auth/register` (Success: User Created)
 *   `GET /api/alumni/profile` (Success: Details Retrieved)
 *   `POST /api/credentials/verify` (Success: Document Validated)
-> **[IMAGE PLACEHOLDER: Paste Screenshot of Postman showing "200 OK" here]**
+![Dashboard Metrics](images/dashbord.png)
 > *Figure 3: API Response Validation*
 
 ### 3.4 Authentication & Security (OTP)
 Tested the email delivery system and JWT token security.
 *   **Success**: The system correctly denies access to protected pages if a user is not logged in.
 *   **Success**: OTP is received within 5 seconds of registration.
-> **[IMAGE PLACEHOLDER: Paste Screenshot of Login Screen or OTP Email here]**
+![OTP Email Security](images/otp%20email.png)
 > *Figure 4: Security Protocol Evidence*
 
 ---

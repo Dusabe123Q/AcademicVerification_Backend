@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employment History - Alumni Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="/alumni/dashboard" class="sidebar-brand">
+            <i class="bi bi-mortarboard-fill text-primary"></i> Alumni Portal
+        </a>
+        <div class="sidebar-nav">
+            <a href="/alumni/dashboard" class="nav-link sidebar-link">
+                <i class="bi bi-person-badge"></i> My Profile
+            </a>
+            <a href="/alumni/employment" class="nav-link sidebar-link active">
+                <i class="bi bi-briefcase"></i> Employment History
+            </a>
+        </div>
+        <div class="p-3 border-top border-secondary">
+            <button class="btn btn-outline-light w-100 logout-btn">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="topbar">
+            <button class="btn btn-light d-md-none" id="sidebar-toggle">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <span class="text-muted fw-medium" id="user-display">Alumnus</span>
+                <i class="bi bi-person-circle fs-4 text-primary"></i>
+            </div>
+        </header>
+
+        <div class="content-area container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">Employment History</h2>
+                <button class="btn btn-primary" onclick="openJobModal()">
+                    <i class="bi bi-plus-lg"></i> Add Job
+                </button>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <div class="row" id="jobList">
+                <!-- Populated via JS -->
+            </div>
+            
+            <div id="noJobs" class="text-center text-muted p-5" style="display: none;">
+                <i class="bi bi-briefcase fs-1"></i>
+                <p class="mt-3">No employment history added yet.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Job Modal -->
+<div class="modal fade" id="jobModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" id="modalTitle">Add Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="jobForm">
+                    <input type="hidden" id="jobId">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-medium">Company / Employer</label>
+                        <input type="text" class="form-control" id="employerName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-medium">Job Title</label>
+                        <input type="text" class="form-control" id="jobTitle" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label text-muted fw-medium">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <label class="form-label text-muted fw-medium">End Date (Optional)</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Save Job History</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global Loader -->
+<div id="global-loader"><div class="spinner-border text-primary" role="status"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+
+<script>
+    let allJobs = [];
+    const jobModal = new bootstrap.Modal(document.getElementById('jobModal'));
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if(!AUTH_API.checkAuth('ALUMNI')) return;
+        
+        await loadJobs();
+
+        document.getElementById('jobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('jobId').value;
+            const payload = {
+                employer: document.getElementById('employerName').value,
+                jobTitle: document.getElementById('jobTitle').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value || null
+            };
+
+            try {
+                if(id) {
+                    await fetchApi(`/alumni/employment/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+                    showAlert('Employment history updated.', 'success');
+                } else {
+                    await fetchApi('/alumni/employment', { method: 'POST', body: JSON.stringify(payload) });
+                    showAlert('Employment history added.', 'success');
+                }
+                jobModal.hide();
+                loadJobs();
+            } catch (err) {
+                showAlert(err.message, 'danger');
+            }
+        });
+    });
+
+    async function loadJobs() {
+        try {
+            allJobs = await fetchApi('/alumni/employment', { method: 'GET' });
+            renderJobs(allJobs);
+        } catch (err) {
+            showAlert('Failed to load job history: ' + err.message, 'danger');
+        }
+    }
+
+    function renderJobs(jobs) {
+        const list = document.getElementById('jobList');
+        const noJobs = document.getElementById('noJobs');
+        
+        if (!jobs || jobs.length === 0) {
+            list.innerHTML = '';
+            noJobs.style.display = 'block';
+            return;
+        }
+
+        noJobs.style.display = 'none';
+        
+        // Sort newest first
+        jobs.sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
+
+        list.innerHTML = jobs.map(job => `
+            <div class="col-12 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 position-relative">
+                        <div class="position-absolute top-0 end-0 p-3">
+                            <button class="btn btn-sm btn-icon btn-light" onclick="openJobModal(${job.id})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-icon btn-light text-danger" onclick="deleteJob(${job.id})"><i class="bi bi-trash"></i></button>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">${job.jobTitle}</h5>
+                        <h6 class="text-primary mb-3"><i class="bi bi-building me-1"></i> ${job.employer}</h6>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-calendar-event me-1"></i> 
+                            ${formatDate(job.startDate)} - ${job.endDate ? formatDate(job.endDate) : 'Present'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openJobModal(id = null) {
+        document.getElementById('jobForm').reset();
+        if(id) {
+            const job = allJobs.find(j => j.id === id);
+            document.getElementById('jobId').value = job.id;
+            document.getElementById('employerName').value = job.employer;
+            document.getElementById('jobTitle').value = job.jobTitle;
+            // Dates handling format YYYY-MM-DD
+            if(job.startDate) document.getElementById('startDate').value = job.startDate.substring(0,10);
+            if(job.endDate) document.getElementById('endDate').value = job.endDate.substring(0,10);
+            document.getElementById('modalTitle').innerText = 'Edit Job';
+        } else {
+            document.getElementById('jobId').value = '';
+            document.getElementById('modalTitle').innerText = 'Add Job';
+        }
+        jobModal.show();
+    }
+
+    async function deleteJob(id) {
+        if(!confirm('Are you sure you want to delete this job history?')) return;
+        try {
+            await fetchApi(`/alumni/employment/${id}`, { method: 'DELETE' });
+            showAlert('Job deleted successfully.', 'success');
+            loadJobs();
+        } catch (err) {
+            showAlert(err.message, 'danger');
+        }
+    }
+</script>
+
+</body>
+</html>

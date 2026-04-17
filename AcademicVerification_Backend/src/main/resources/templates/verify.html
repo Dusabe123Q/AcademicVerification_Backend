@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Credential - Academic Verification</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="verify-bg">
+
+    <header class="verify-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-shield-check me-2"></i> AcademicVerifiy
+            </h4>
+            <a href="/login" class="btn btn-outline-primary fw-medium">Sign In</a>
+        </div>
+    </header>
+
+    <main class="verify-container">
+        <div class="verify-card position-relative">
+            <h2 class="fw-bold mb-2">Verify Credential</h2>
+            <p class="text-muted mb-4">Enter the certificate serial number below to verify its authenticity.</p>
+
+            <div id="alert-container"></div>
+
+            <form id="verifyForm">
+                <div class="input-group input-group-lg mb-4 shadow-sm border rounded overflow-hidden">
+                    <span class="input-group-text bg-white border-0 text-primary"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-0" id="serialNumber" placeholder="e.g. CERT-12345-ABCD" required>
+                    <button class="btn btn-primary px-4 fw-semibold border-0" type="submit" id="verifyBtn">Verify</button>
+                </div>
+            </form>
+
+            <!-- Verification Result Container -->
+            <div id="resultContainer" class="mt-4 text-start" style="display: none;">
+                <hr class="mb-4 text-muted opacity-25">
+                
+                <div id="resultSuccess" style="display: none;">
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-success bg-opacity-10 rounded text-success">
+                        <i class="bi bi-check-circle-fill fs-3"></i>
+                        <div>
+                            <h5 class="fw-bold mb-0">Verified Authenticity!</h5>
+                            <small>This credential is valid and recognized by the institution.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="text-muted small fw-medium text-uppercase">Student Name</label>
+                            <h5 class="fw-bold text-dark" id="resName">John Doe</h5>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="text-muted small fw-medium text-uppercase">Document Type</label>
+                            <h5 class="fw-bold text-dark" id="resDegree">Bachelor of Science</h5>
+                        </div>
+                        <div class="col-12 col-md-6 mt-3">
+                            <label class="text-muted small fw-medium text-uppercase">Issue Date</label>
+                            <h5 class="fw-bold text-dark" id="resYear">2023-05-15</h5>
+                        </div>
+                        <div class="col-12 col-md-6 mt-3">
+                            <label class="text-muted small fw-medium text-uppercase">Serial Number</label>
+                            <h5 class="fw-bold text-primary font-monospace" id="resSerial">CERT-XXXXX</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-secondary w-100" onclick="window.print()">
+                            <i class="bi bi-printer me-2"></i> Print Report
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultFail" style="display: none;">
+                    <div class="d-flex align-items-center gap-3 p-3 bg-danger bg-opacity-10 rounded text-danger">
+                        <i class="bi bi-x-circle-fill fs-3"></i>
+                        <div>
+                            <h5 class="fw-bold mb-0">Invalid Credential</h5>
+                            <small>No record found matching this serial number. Please check your input.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Loader -->
+    <div id="global-loader">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/api.js}"></script>
+    <script th:src="@{/js/main.js}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if there is a serialNumber query param automatically
+            const params = new URLSearchParams(window.location.search);
+            const serialParam = params.get('serialNumber');
+            if (serialParam) {
+                document.getElementById('serialNumber').value = serialParam;
+                document.getElementById('verifyBtn').click();
+            }
+        });
+
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const serial = document.getElementById('serialNumber').value.trim();
+            if (!serial) return;
+
+            const btn = document.getElementById('verifyBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+            btn.disabled = true;
+            
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('resultSuccess').style.display = 'none';
+            document.getElementById('resultFail').style.display = 'none';
+
+            try {
+                // Public endpoint, wait for API response.
+                const response = await fetchApi(`/credentials/verify?serialNumber=${encodeURIComponent(serial)}`, { method: 'GET' });
+                
+                // Assuming response is an object if valid, and throws 404/Error if not valid
+                if (response && (response.valid || response.status === 'SUCCESS' || response.serialNumber)) {
+                    document.getElementById('resName').innerText = response.studentName || response.name || 'Unknown';
+                    document.getElementById('resDegree').innerText = response.credentialType || response.degree || response.type || 'Degree';
+                    document.getElementById('resYear').innerText = formatDate(response.issueDate || response.year);
+                    document.getElementById('resSerial').innerText = response.serialNumber || serial;
+                    
+                    document.getElementById('resultSuccess').style.display = 'block';
+                } else {
+                    document.getElementById('resultFail').style.display = 'block';
+                }
+            } catch (err) {
+                // Not found or error
+                document.getElementById('resultFail').style.display = 'block';
+                if (err.message && err.message.toLowerCase().includes('not found')) {
+                    // Normal behavior for invalid
+                } else {
+                    showAlert(err.message, 'danger');
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                document.getElementById('resultContainer').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

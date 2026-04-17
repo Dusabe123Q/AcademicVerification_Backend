@@ -18,6 +18,14 @@ public class AlumniDTO {
     private String current_employer;
     private String position;
     
+    @NotBlank(message = "Name is required")
+    private String name;
+    
+    @NotBlank(message = "Email is required")
+    private String email;
+    
+    private String phone;
+    
     private Long student_id; // Keeping logic simple to link a student
 
     public AlumniDTO() {}
@@ -60,5 +68,29 @@ public class AlumniDTO {
 
     public void setStudent_id(Long student_id) {
         this.student_id = student_id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

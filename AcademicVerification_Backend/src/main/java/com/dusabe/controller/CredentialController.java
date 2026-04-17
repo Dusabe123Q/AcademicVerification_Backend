@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/credentials")
+@RequestMapping("/api/credentials")
 public class CredentialController {
 
     private final CredentialService service;
@@ -24,6 +24,11 @@ public class CredentialController {
     @PostMapping
     public Credential createCredential(@RequestBody Credential credential) {
         return service.saveCredential(credential);
+    }
+
+    @GetMapping("/verify")
+    public Credential verifyCredential(@RequestParam String serialNumber) {
+        return service.getCredentialBySerialNumber(serialNumber);
     }
 
     @GetMapping("/{id}")
