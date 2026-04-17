@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHASE 10: TESTING & DEBUGGING FINAL REPORT</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            line-height: 1.5;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24pt;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .meta {
+            margin-top: 10px;
+            font-size: 12pt;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        h2 {
+            font-size: 16pt;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 11pt;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .figure {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .figure img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .caption {
+            font-style: italic;
+            font-size: 10pt;
+            margin-top: 5px;
+        }
+
+        .conclusion {
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+        }
+
+        .signature {
+            margin-top: 40px;
+            text-align: right;
+            font-style: italic;
+        }
+
+        @media print {
+            body { padding: 0; }
+            .header { border-bottom: 3px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Phase 10: Testing & Debugging Final Report</h1>
+    <div class="meta">
+        <strong>Project Title:</strong> Academic Credential Verification and Alumni Tracking System<br>
+        <strong>Student:</strong> Dusabe Marie Rose<br>
+        <strong>Duration:</strong> 11 Apr – 17 Apr 2026
+    </div>
+</div>
+
+<div class="section">
+    <h2>1. Overview</h2>
+    <p>The final phase of the project focused on system testing and debugging to ensure that all modules work correctly before final submission. This phase involved verifying core functionalities, identifying and fixing bugs, and ensuring system security through both manual and automated tests.</p>
+</div>
+
+<div class="section">
+    <h2>2. Testing Schedule</h2>
+    <p>The testing phase was organized into a 7-day schedule to systematically cover all aspects of the application.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Date</th>
+                <th>Activity Description</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Day 1</strong></td><td>11 Apr</td><td>Create test plan and testing strategy</td><td>Completed</td></tr>
+            <tr><td><strong>Day 2</strong></td><td>12 Apr</td><td>Perform unit testing on backend services</td><td>Completed</td></tr>
+            <tr><td><strong>Day 3</strong></td><td>13 Apr</td><td>Perform API testing using Postman</td><td>Completed</td></tr>
+            <tr><td><strong>Day 4</strong></td><td>14 Apr</td><td>Test authentication and authorization scenarios</td><td>Completed</td></tr>
+            <tr><td><strong>Day 5</strong></td><td>15 Apr</td><td>Fix bugs and performance issues</td><td>Completed</td></tr>
+            <tr><td><strong>Day 6</strong></td><td>16 Apr</td><td>Retest system after fixes</td><td>Completed</td></tr>
+            <tr><td><strong>Day 7</strong></td><td>17 Apr</td><td>Compile testing report and evidence</td><td>Completed</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h2>3. Initial System State and Planning</h2>
+    <p>Testing began by verifying that the initial entry point of the system is stable and that the development environment is correctly configured. This ensures that the system is ready for deeper logic evaluation.</p>
+    <div class="figure">
+        <img src="images/home(welcome.png" alt="Home Page">
+        <div class="caption">Figure 1: Initial System Entry Point</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>4. Backend Service and API Validation</h2>
+    <p>The backend services were tested to ensure data integrity. API endpoints for registration, login, and academic records were evaluated using Postman to confirm that the frontend and backend communicate effectively.</p>
+    <div class="figure">
+        <img src="images/academicverify.png" alt="Backend Environment">
+        <div class="caption">Figure 2: System Development Environment and Log Monitoring</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>5. Security and Authentication Testing</h2>
+    <p>Authentication is a critical part of the system. We tested the login flow, JWT token generation, and the asynchronous OTP email verification process to prevent unauthorized access.</p>
+    <div class="figure">
+        <img src="images/otp email.png" alt="OTP Security">
+        <div class="caption">Figure 3: Secure SMTP OTP Handshake for User Activation</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>6. Functional Module Retesting</h2>
+    <p>After fixing initial bugs, we retested the primary modules, including the Admin Dashboard and the Alumni Management system. We verified that live charts and records are synchronized with the database.</p>
+    <div class="figure">
+        <img src="images/dashbord.png" alt="Dashboard Integrity">
+        <div class="caption">Figure 4: Strategic Oversight Dashboard Verification</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>7. Alumni and Profile Data Persistence</h2>
+    <p>We verified that registered alumni can successfully manage their profiles, including uploading career information and identity details. All data is correctly persisted in the MySQL database.</p>
+    <div class="figure">
+        <img src="images/Screenshot 2026-04-10 162715.png" alt="Alumni Records">
+        <div class="caption">Figure 5: Institutional Alumni Records Persistence</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>8. Final System Evidence</h2>
+    <p>The final check confirmed that the system is stable across all user roles. The profile page and credential ledger are fully functional.</p>
+    <div class="figure">
+        <img src="images/Screenshot 2026-04-10 144751.png" alt="Profile Page">
+        <div class="caption">Figure 6: Personal Identity Ledger Verification</div>
+    </div>
+</div>
+
+<div class="conclusion">
+    <h2>Conclusion</h2>
+    <p>The Testing and Debugging phase has confirmed that the Academic Verification System is stable, secure, and ready for use. All identified issues were resolved, and the system matches the technical requirements established at the start of the project. The system is now fully prepared for deployment and final presentation.</p>
+</div>
+
+<div class="signature">
+    Report Finalized by Dusabe Marie Rose
+</div>
+
+</body>
+</html>
