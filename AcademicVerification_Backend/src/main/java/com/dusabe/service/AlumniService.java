@@ -15,10 +15,12 @@ public class AlumniService {
 
     private final AlumniRepository repository;
     private final UserRepository userRepository;
+    private final com.dusabe.repository.AuditLogRepository auditLogRepository;
 
-    public AlumniService(AlumniRepository repository, UserRepository userRepository) {
+    public AlumniService(AlumniRepository repository, UserRepository userRepository, com.dusabe.repository.AuditLogRepository auditLogRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     public List<Alumni> getAllAlumni() {
@@ -26,7 +28,10 @@ public class AlumniService {
     }
 
     public Alumni saveAlumni(Alumni alumni) {
-        return repository.save(alumni);
+        Alumni saved = repository.save(alumni);
+        String action = alumni.getAlumni_id() == null ? "ALUMNI_CREATE" : "ALUMNI_UPDATE";
+        auditLogRepository.save(new com.dusabe.entity.AuditLog(action, "Alumni record modified for: " + alumni.getName()));
+        return saved;
     }
 
     public Alumni getAlumniById(Long id) {
@@ -49,6 +54,9 @@ public class AlumniService {
     }
 
     public void deleteAlumni(Long id) {
+        Alumni a = repository.findById(id).orElse(null);
+        String name = (a != null) ? a.getName() : "ID: " + id;
         repository.deleteById(id);
+        auditLogRepository.save(new com.dusabe.entity.AuditLog("ALUMNI_DELETE", "Alumni record deleted: " + name));
     }
 }

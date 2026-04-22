@@ -13,9 +13,11 @@ import java.util.Map;
 public class PublicVerificationController {
 
     private final CredentialService credentialService;
+    private final com.dusabe.repository.AuditLogRepository auditLogRepository;
 
-    public PublicVerificationController(CredentialService credentialService) {
+    public PublicVerificationController(CredentialService credentialService, com.dusabe.repository.AuditLogRepository auditLogRepository) {
         this.credentialService = credentialService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping("/verify/{serialNumber}")
@@ -24,10 +26,13 @@ public class PublicVerificationController {
 
         Map<String, Object> response = new HashMap<>();
         if (credential == null) {
+            auditLogRepository.save(new com.dusabe.entity.AuditLog("VERIFICATION_FAILURE", "Invalid certificate check for Serial: " + serialNumber));
             response.put("valid", false);
             response.put("message", "Credential not found. This certificate may be invalid or does not exist.");
             return ResponseEntity.ok(response);
         }
+
+        auditLogRepository.save(new com.dusabe.entity.AuditLog("CERTIFICATE_VERIFIED", "Public verification success for: " + credential.getStudent().getName() + " (Serial: " + serialNumber + ")"));
 
         response.put("valid", true);
         response.put("serialNumber", credential.getSerial_number());

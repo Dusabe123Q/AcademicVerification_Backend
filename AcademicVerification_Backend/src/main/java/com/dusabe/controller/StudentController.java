@@ -44,6 +44,11 @@ public class StudentController {
         return ResponseEntity.ok(graduationService.graduateStudent(id));
     }
 
+    @PutMapping("/{id}")
+    public Student updateStudent(@PathVariable Long id, @Valid @RequestBody Student student) {
+        return studentService.updateStudent(id, student);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);

@@ -10,9 +10,11 @@ import java.util.List;
 public class CredentialService {
 
     private final CredentialRepository repository;
+    private final com.dusabe.repository.AuditLogRepository auditLogRepository;
 
-    public CredentialService(CredentialRepository repository) {
+    public CredentialService(CredentialRepository repository, com.dusabe.repository.AuditLogRepository auditLogRepository) {
         this.repository = repository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     public List<Credential> getAllCredentials() {
@@ -20,7 +22,10 @@ public class CredentialService {
     }
 
     public Credential saveCredential(Credential credential) {
-        return repository.save(credential);
+        Credential saved = repository.save(credential);
+        String action = credential.getCredential_id() == null ? "CREDENTIAL_ISSUE" : "CREDENTIAL_UPDATE";
+        auditLogRepository.save(new com.dusabe.entity.AuditLog(action, "Credential record managed for Serial: " + credential.getSerial_number()));
+        return saved;
     }
 
     public Credential getCredentialById(Long id) {
@@ -32,6 +37,9 @@ public class CredentialService {
     }
 
     public void deleteCredential(Long id) {
+        Credential c = repository.findById(id).orElse(null);
+        String sn = (c != null) ? c.getSerial_number() : "ID: " + id;
         repository.deleteById(id);
+        auditLogRepository.save(new com.dusabe.entity.AuditLog("CREDENTIAL_DELETE", "Credential revoked/deleted: " + sn));
     }
 }

@@ -33,7 +33,7 @@ public class Student {
     private String email;
 
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^\\+?[0-9\\- ]{10,15}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^\\+?[0-9\\- ]{8,15}$", message = "Invalid phone number format")
     private String phone;
 
     @NotBlank(message = "Faculty is required")

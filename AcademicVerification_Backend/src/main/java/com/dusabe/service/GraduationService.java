@@ -19,12 +19,16 @@ public class GraduationService {
     private final AlumniRepository alumniRepository;
     private final NotificationRepository notificationRepository;
 
+    private final com.dusabe.repository.AuditLogRepository auditLogRepository;
+
     public GraduationService(StudentRepository studentRepository, 
                              AlumniRepository alumniRepository, 
-                             NotificationRepository notificationRepository) {
+                             NotificationRepository notificationRepository,
+                             com.dusabe.repository.AuditLogRepository auditLogRepository) {
         this.studentRepository = studentRepository;
         this.alumniRepository = alumniRepository;
         this.notificationRepository = notificationRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @Transactional
@@ -59,6 +63,8 @@ public class GraduationService {
             );
             notificationRepository.save(notification);
         }
+
+        auditLogRepository.save(new com.dusabe.entity.AuditLog("STUDENT_GRADUATION", "Student " + student.getName() + " has been migrated to Alumni Ledger."));
 
         return savedAlumni;
     }

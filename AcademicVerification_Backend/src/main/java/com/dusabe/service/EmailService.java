@@ -105,4 +105,47 @@ public class EmailService {
         helper.setText(htmlBody, true);
         mailSender.send(message);
     }
+
+    @Async
+    public void sendWelcomeEmail(String toEmail, String username, String plainPassword) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(toEmail);
+        helper.setSubject("Welcome to AcademiVerify – Your Account is Ready");
+
+        String htmlBody = """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+                  <div style="background: linear-gradient(135deg, #059669 0%%, #10b981 100%%);\
+                 padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">AcademiVerify</h1>
+                    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0;">Secure Institutional Access</p>
+                  </div>
+                  <div style="background: #ffffff; padding: 40px 32px; border-radius: 0 0 12px 12px;\
+                 border: 1px solid #e8e8e8; border-top: none;">
+                    <h2 style="color: #2d3748; margin: 0 0 16px;">Hello, %s!</h2>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                      An administrator has created your account on AcademiVerify. Use the credentials below to log in:
+                    </p>
+                    <div style="background: #f7fafc; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+                      <p style="margin: 0 0 12px; color: #718096; font-size: 12px; font-weight: 700; uppercase; tracking: 1px;">Your Credentials</p>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <p style="margin: 0; color: #4a5568;"><strong>Username:</strong> %s</p>
+                        <p style="margin: 0; color: #4a5568;"><strong>Password:</strong> <span style="color: #059669; font-family: monospace; font-size: 18px;">%s</span></p>
+                      </div>
+                    </div>
+                    <p style="color: #e53e3e; font-size: 13px; font-weight: 600; margin: 0 0 24px;">
+                      IMPORTANT: Please change your password after your first login for maximum security.
+                    </p>
+                    <p style="color: #718096; font-size: 13px; margin: 0;">
+                      This is an automated message. Please do not reply.
+                    </p>
+                  </div>
+                </div>
+                """.formatted(username, username, plainPassword);
+
+        helper.setText(htmlBody, true);
+        mailSender.send(message);
+    }
 }
