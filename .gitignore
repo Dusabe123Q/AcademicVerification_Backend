@@ -1,0 +1,46 @@
+# Environment
+.env
+.env.*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+AcademicVerification_Frontend/node_modules/
+
+# Build outputs
+dist/
+target/
+AcademicVerification_Backend/target/
+
+# Documentation & Reports (KEEP LOCAL ONLY)
+AcademicVerification_Frontend/documentation/
+AcademicVerification_Backend/AcademicVerification_Backend/documentation/
+
+# Uploads & Assets (KEEP LOCAL ONLY)
+AcademicVerification_Backend/AcademicVerification_Backend/uploads/
+AcademicVerification_Frontend/uploads/
+uploads/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
