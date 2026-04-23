@@ -1,9 +1,6 @@
 -- Academic Verification System - Database Schema
 -- Target: MySQL
 
-CREATE DATABASE IF NOT EXISTS academic_verification_db;
-USE academic_verification_db;
-
 -- 1. Table: user
 CREATE TABLE IF NOT EXISTS `user` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
