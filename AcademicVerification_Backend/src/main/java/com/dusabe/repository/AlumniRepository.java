@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface AlumniRepository extends JpaRepository<Alumni, Long> {
     Optional<Alumni> findByUserUsername(String username);
     Optional<Alumni> findByUser(User user);
+    Optional<Alumni> findByStudent(com.dusabe.entity.Student student);
+
 }

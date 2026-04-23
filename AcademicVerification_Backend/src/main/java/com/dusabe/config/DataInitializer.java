@@ -97,20 +97,27 @@ public class DataInitializer {
 
             // ─── PART 3.5: Ensure Default Alumni has everything linked ──────
             // We will use both "alumni@gmail.com" AND "alumni" for maximum compatibility
-            String[] testUsernames = {"alumni@gmail.com", "alumni"};
+            String[] testUsernames = {"alumni@gmail.com", "alumni", "employer"};
             for (String uname : testUsernames) {
-                Optional<User> uOpt = userRepository.findByUsername(uname);
-                User u;
-                if (uOpt.isEmpty()) {
-                    u = new User(uname, passwordEncoder.encode("alumni123"), Role.ALUMNI);
-                    u = userRepository.save(u);
-                } else {
-                    u = uOpt.get();
-                    u.setPassword(passwordEncoder.encode("alumni123"));
-                    userRepository.save(u);
+                User user = userRepository.findByUsername(uname).orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setUsername(uname);
+                    newUser.setEmail(uname.contains("@") ? uname : uname + "@demo.com");
+                    newUser.setRole(uname.equals("employer") ? Role.EMPLOYER : Role.ALUMNI);
+                    newUser.setPassword(passwordEncoder.encode(uname.equals("employer") ? "employer123" : "alumni123"));
+                    return userRepository.save(newUser);
+                });
+
+                // Sync password for demo
+                user.setPassword(passwordEncoder.encode(uname.equals("employer") ? "employer123" : "alumni123"));
+                userRepository.save(user);
+
+                if (user.getRole() == Role.EMPLOYER) {
+                    System.out.println(">>> EMPLOYER SYNCED: " + uname + " / employer123");
+                    continue; 
                 }
 
-                final User finalUser = u; // Fix: effectively final for lambda
+                final User finalUser = user; // Fix: effectively final for lambda
                 Alumni alumni = alumniRepository.findByUser(finalUser).orElseGet(() -> {
                     Alumni a = new Alumni();
                     a.setUser(finalUser);
@@ -124,22 +131,30 @@ public class DataInitializer {
                 alumni.setPosition("Lead Developer");
                 alumni.setCurrent_employer("Global Tech Solutions");
                 
-                // Link to student record so credentials show up (Only for the first one to avoid UK_alumni_student)
-                if (uname.equals("alumni@gmail.com") || uname.equals("alumni")) {
+                // Link to student record so credentials show up (Prioritize "alumni" username for the demo)
+                if (uname.equals("alumni")) {
                     Student s = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> 
                         createStudent(studentRepository, "Dusabe Marie ROSE", "alumni@gmail.com", "24RP001", "ICT", "Computer Science")
                     );
                     
-                    // Check if this student is already linked to ANOTHER alumni to avoid duplicate key
-                    Optional<Alumni> existingAlumni = alumniRepository.findByStudent(s);
-                    if (existingAlumni.isEmpty() || existingAlumni.get().getUser().getUsername().equals(uname)) {
-                        alumni.setStudent(s);
-                        if (credentialRepository.findByStudent(s).isEmpty()) {
-                            createCredential(credentialRepository, s, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
-                        }
+                    // CLEANUP: Detach this student from ANY other alumni to avoid UK_alumni_student
+                    List<Alumni> allWithStudent = alumniRepository.findAll().stream()
+                        .filter(a -> a.getStudent() != null && a.getStudent().getStudent_id().equals(s.getStudent_id()))
+                        .collect(java.util.stream.Collectors.toList());
+                    for (Alumni a : allWithStudent) {
+                        a.setStudent(null);
+                        alumniRepository.save(a);
+                    }
+                    
+                    // Force link to THIS user
+                    alumni.setStudent(s);
+                    if (credentialRepository.findByStudent(s).isEmpty()) {
+                        createCredential(credentialRepository, s, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
                     }
                 }
                 alumniRepository.save(alumni);
+
+
                 System.out.println(">>> DEMO USER SYNCED: " + uname + " / alumni123");
             }
 
@@ -161,18 +176,22 @@ public class DataInitializer {
                 }
             }
 
-            // Seed Verification Engine (History)
-            if (verificationRepository.count() < 5) {
-
-                System.out.println("Seeding Verification Audit History...");
-                List<Credential> creds = credentialRepository.findAll();
-                if (!creds.isEmpty()) {
-                    createVerification(verificationRepository, creds.get(0), "APPROVED");
-                    createVerification(verificationRepository, creds.get(0), "PENDING");
-                    if (creds.size() > 1) createVerification(verificationRepository, creds.get(1), "APPROVED");
-                    if (creds.size() > 2) createVerification(verificationRepository, creds.get(2), "APPROVED");
+            // Seed Verification Engine (History) specifically for the demo student
+            Student demoStudent = studentRepository.findByRegistrationNumber("24RP001").orElse(null);
+            if (demoStudent != null) {
+                List<Credential> studentCreds = credentialRepository.findByStudent(demoStudent);
+                if (!studentCreds.isEmpty()) {
+                    Credential mainCred = studentCreds.get(0);
+                    // Only seed if no verifications exist for this specific credential
+                    if (verificationRepository.findByCredential(mainCred).isEmpty()) {
+                        System.out.println("Seeding Verification Audit History for Demo Student...");
+                        createVerification(verificationRepository, mainCred, "APPROVED");
+                        createVerification(verificationRepository, mainCred, "PENDING");
+                        createVerification(verificationRepository, mainCred, "APPROVED");
+                    }
                 }
             }
+
 
             // Seed Audit Logs for Professional View
             if (auditLogRepository.count() < 10) {
