@@ -9,4 +9,7 @@ import java.util.Optional;
 public interface CredentialRepository extends JpaRepository<Credential, Long> {
     @Query("SELECT c FROM Credential c WHERE c.serial_number = :serialNumber")
     Optional<Credential> findBySerialNumber(@Param("serialNumber") String serialNumber);
+
+    java.util.List<Credential> findByStudent(com.dusabe.entity.Student student);
+
 }

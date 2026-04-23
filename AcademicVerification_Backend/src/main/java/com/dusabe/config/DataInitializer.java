@@ -73,78 +73,117 @@ public class DataInitializer {
             if (alumniRepository.findByUser(primaryAdmin).isEmpty()) {
                 Alumni alumni = new Alumni();
                 alumni.setUser(primaryAdmin);
-                alumni.setName("Dusabe Marie rose (Admin)");
+                alumni.setName("Dusabe Marie ROSE");
                 alumni.setEmail(adminEmail);
                 alumni.setGrad_year(2023);
-                alumni.setCareer_info("Academic Administrator");
-                alumniRepository.save(alumni);
-                System.out.println("Admin-linked Alumni profile confirmed.");
-            }
-
-            if (userRepository.findByUsername("alumni@gmail.com").isEmpty()) {
-                User user = new User(
-                        "alumni@gmail.com",
-                        passwordEncoder.encode("alumni123"),
-                        Role.ALUMNI
+                alumni.setCareer_info("Academic Systems Specialist");
+                alumni.setCurrent_employer("Global Education Tech");
+                alumni.setPosition("Senior System Auditor");
+                
+                // Link to a student record for credentials
+                Student student = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> 
+                    createStudent(studentRepository, "Dusabe Marie ROSE", adminEmail, "24RP001", "ICT", "Computer Science")
                 );
-                userRepository.save(user);
-
-                Alumni alumni = new Alumni();
-                alumni.setUser(user);
-                alumni.setGrad_year(2022);
-                alumni.setCareer_info("Software Developer");
-                alumni.setPosition("Junior dev");
-                alumni.setPosition("Junior dev");
-                alumni.setCurrent_employer("Initial Corp");
+                alumni.setStudent(student);
                 
                 alumniRepository.save(alumni);
-                System.out.println("Default alumni user created: alumni@gmail.com / alumni123");
+                System.out.println("Admin-linked Alumni profile confirmed for Dusabe Marie ROSE.");
+                
+                // Ensure credentials exist for this student
+                if (credentialRepository.findByStudent(student).isEmpty()) {
+                    createCredential(credentialRepository, student, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
+                }
             }
 
-            // ─── PART 4: Robust Demo Seed Data (Dusabe, Rehema, Eric) ──────────
+            // ─── PART 3.5: Ensure Default Alumni has everything linked ──────
+            // We will use both "alumni@gmail.com" AND "alumni" for maximum compatibility
+            String[] testUsernames = {"alumni@gmail.com", "alumni"};
+            for (String uname : testUsernames) {
+                Optional<User> uOpt = userRepository.findByUsername(uname);
+                User u;
+                if (uOpt.isEmpty()) {
+                    u = new User(uname, passwordEncoder.encode("alumni123"), Role.ALUMNI);
+                    u = userRepository.save(u);
+                } else {
+                    u = uOpt.get();
+                    u.setPassword(passwordEncoder.encode("alumni123"));
+                    userRepository.save(u);
+                }
+
+                final User finalUser = u; // Fix: effectively final for lambda
+                Alumni alumni = alumniRepository.findByUser(finalUser).orElseGet(() -> {
+                    Alumni a = new Alumni();
+                    a.setUser(finalUser);
+                    return a;
+                });
+
+                alumni.setName("Dusabe Marie ROSE");
+                alumni.setEmail(uname.contains("@") ? uname : "alumni@gmail.com");
+                alumni.setGrad_year(2023);
+                alumni.setCareer_info("Senior Software Engineer & Alumni Lead");
+                alumni.setPosition("Lead Developer");
+                alumni.setCurrent_employer("Global Tech Solutions");
+                
+                // Link to student record so credentials show up (Only for the first one to avoid UK_alumni_student)
+                if (uname.equals("alumni@gmail.com") || uname.equals("alumni")) {
+                    Student s = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> 
+                        createStudent(studentRepository, "Dusabe Marie ROSE", "alumni@gmail.com", "24RP001", "ICT", "Computer Science")
+                    );
+                    
+                    // Check if this student is already linked to ANOTHER alumni to avoid duplicate key
+                    Optional<Alumni> existingAlumni = alumniRepository.findByStudent(s);
+                    if (existingAlumni.isEmpty() || existingAlumni.get().getUser().getUsername().equals(uname)) {
+                        alumni.setStudent(s);
+                        if (credentialRepository.findByStudent(s).isEmpty()) {
+                            createCredential(credentialRepository, s, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
+                        }
+                    }
+                }
+                alumniRepository.save(alumni);
+                System.out.println(">>> DEMO USER SYNCED: " + uname + " / alumni123");
+            }
+
+
+
+
+
+            // ─── PART 4: Robust Demo Seed Data (Verifications, Logs, Notifications) ──
             System.out.println("Synchronizing Master Demo Ledger...");
             
-            // 1. Ensure Demo Students Exist
-            if (studentRepository.findByRegistrationNumber("24RP001").isEmpty()) {
-                Student s1 = createStudent(studentRepository, "Dusabe", "dusabe@university.edu", "24RP001", "ICT", "Computer Science");
-                createCredential(credentialRepository, s1, "SN-DUS-2024", "Bachelor of Science in CS");
-            }
-            if (studentRepository.findByRegistrationNumber("24RP002").isEmpty()) {
-                Student s2 = createStudent(studentRepository, "Rehema Mugisha", "rehema@university.edu", "24RP002", "Engineering", "Civil Engineering");
-                createCredential(credentialRepository, s2, "SN-REH-2024", "Bachelor of Engineering");
-            }
-            if (studentRepository.findByRegistrationNumber("24RP003").isEmpty()) {
-                Student s3 = createStudent(studentRepository, "Eric", "eric@university.edu", "24RP003", "Science", "Mathematics");
-                createCredential(credentialRepository, s3, "SN-ERI-2024", "Bachelor of Science");
+            // Seed Notifications for ALL users to ensure UI is populated
+            List<User> allUsers = userRepository.findAll();
+            for (User u : allUsers) {
+                if (notificationRepository.findByUserOrderByCreatedAtDesc(u).isEmpty()) {
+                    notificationRepository.save(new Notification(u, "Welcome to the Academic Oversight Dashboard. Your system is 100% operational."));
+                    notificationRepository.save(new Notification(u, "Your profile was successfully synchronized with the University Central Node."));
+                    notificationRepository.save(new Notification(u, "Notification: Your academic credential has been verified by an external auditor."));
+                    notificationRepository.save(new Notification(u, "System Sync: Latest security patches applied to your academic node."));
+                }
             }
 
-            // 2. Seed System Ledger (Audit Logs) if empty
-            if (auditLogRepository.count() == 0) {
-                auditLogRepository.save(new AuditLog("CREATE_SYSTEM", "Academic Verification Node - Phase 10 Activated"));
-                auditLogRepository.save(new AuditLog("UPDATE_SECURITY", "JWT Secret Keys rotated and validated"));
-                auditLogRepository.save(new com.dusabe.entity.AuditLog("CREATE_STUDENT", "New student identity integrated: " + "Dusabe" + " (" + "24RP001" + ")"));
-                auditLogRepository.save(new AuditLog("LOGIN_ADMIN", "Admin (marierose) authenticated from IP: 127.0.0.1"));
-                auditLogRepository.save(new com.dusabe.entity.AuditLog("CREATE_CREDENTIAL", "Digital credential issued for serial: " + "SN-DUS-2024"));
-                System.out.println("System Ledger Seeded.");
-            }
+            // Seed Verification Engine (History)
+            if (verificationRepository.count() < 5) {
 
-            // 3. Seed Notifications for Admin if empty
-            if (notificationRepository.count() == 0) {
-                notificationRepository.save(new Notification(primaryAdmin, "Welcome to the Academic Oversight Dashboard. Your system is 100% operational."));
-            }
-
-            // 4. Seed Verification Engine (History)
-            if (verificationRepository.count() == 0) {
                 System.out.println("Seeding Verification Audit History...");
                 List<Credential> creds = credentialRepository.findAll();
                 if (!creds.isEmpty()) {
                     createVerification(verificationRepository, creds.get(0), "APPROVED");
-                    if (creds.size() > 1) createVerification(verificationRepository, creds.get(1), "PENDING");
+                    createVerification(verificationRepository, creds.get(0), "PENDING");
+                    if (creds.size() > 1) createVerification(verificationRepository, creds.get(1), "APPROVED");
                     if (creds.size() > 2) createVerification(verificationRepository, creds.get(2), "APPROVED");
                 }
             }
+
+            // Seed Audit Logs for Professional View
+            if (auditLogRepository.count() < 10) {
+                auditLogRepository.save(new AuditLog("SYSTEM_BOOT", "Academic Verification Node - Production Sync Active"));
+                auditLogRepository.save(new AuditLog("LOGIN_SUCCESS", "User Dusabe Marie ROSE authenticated session"));
+                auditLogRepository.save(new AuditLog("CREDENTIAL_QUERY", "External verification request for SN-DUS-2023-A1"));
+                auditLogRepository.save(new AuditLog("PROFILE_UPDATE", "Professional career info synchronized for Alumni ID: " + primaryAdmin.getId()));
+            }
             
             System.out.println("Master Demo Synchronization Completed.");
+
         };
     }
 

@@ -12,6 +12,7 @@ import Verification from './pages/Verification';
 import Profile from './pages/Profile';
 import CredentialPublicPage from './pages/CredentialPublicPage';
 import PublicHome from './pages/PublicHome';
+import UserManagement from './pages/UserManagement';
 import AuditLog from './pages/AuditLog';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
               <Route path="/verifications" element={<Verification />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/audit" element={<AuditLog />} />
+              <Route path="/users" element={<UserManagement />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

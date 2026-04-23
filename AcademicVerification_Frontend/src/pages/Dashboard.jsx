@@ -176,7 +176,7 @@ const Dashboard = () => {
           if (a.grad_year) yearMap[a.grad_year] = (yearMap[a.grad_year] || 0) + 1;
         });
         const byYear = Object.entries(yearMap)
-          .sort(([a], [b]) => a - b)
+          .sort(([a], [b]) => Number(a) - Number(b))
           .slice(-6)
           .map(([label, value]) => ({ label, value }));
 
@@ -233,7 +233,7 @@ const Dashboard = () => {
         <div className="flex gap-4 relative z-10 w-full md:w-auto">
           <div className="bg-white/5 p-5 rounded-3xl border border-white/10 shadow-inner flex-1 md:flex-none text-center">
             <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-1">Access Tier</p>
-            <p className="text-2xl font-black text-emerald-400 leading-none">{role.replace('ROLE_', '')}</p>
+            <p className="text-2xl font-black text-emerald-400 leading-none">{role ? role.replace('ROLE_', '') : 'User'}</p>
           </div>
           <div className="bg-white/5 p-5 rounded-3xl border border-white/10 shadow-inner flex-1 md:flex-none text-center">
             <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-1">Status</p>

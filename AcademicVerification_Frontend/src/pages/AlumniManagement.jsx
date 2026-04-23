@@ -49,7 +49,13 @@ const AlumniManagement = () => {
   const fetchAlumni = async () => {
     try {
       const response = await api.get('/alumni');
-      setAlumniList(response.data);
+      if (Array.isArray(response.data)) {
+        setAlumniList(response.data);
+      } else {
+        console.error('Invalid data format received:', response.data);
+        setError('System retrieval failure. Invalid data format received from server.');
+        setAlumniList([]);
+      }
     } catch (err) {
       const msg = err.response?.status === 403 
         ? 'Access Denied (403). Your administrative identity lacks the necessary authority for this terminal.'
@@ -89,7 +95,9 @@ const AlumniManagement = () => {
     setIsEditModalOpen(true);
   };
 
-  const gradYears = [...new Set(alumniList.map(a => a.grad_year).filter(Boolean))].sort();
+  const gradYears = Array.isArray(alumniList) 
+    ? [...new Set(alumniList.map(a => a.grad_year).filter(Boolean))].sort() 
+    : [];
 
   if (loading) return (
     <div className="flex flex-col justify-center items-center h-[70vh] gap-4">
@@ -146,7 +154,7 @@ const AlumniManagement = () => {
               <InputField label="Full Identity Name" value={formData.name} onChange={v => setFormData({...formData, name: v})} required placeholder="John Silver" />
               <InputField label="Entity Email" type="email" value={formData.email} onChange={v => setFormData({...formData, email: v})} required placeholder="john@university.edu" />
               <InputField label="Communication Port" value={formData.phone} onChange={v => setFormData({...formData, phone: v})} placeholder="+1 (555) 123-4567" />
-              <InputField label="Graduation Cycle" type="number" value={formData.grad_year} onChange={v => setFormData({...formData, grad_year: v})} required placeholder="2024" />
+              <InputField label="Graduation Cycle" type="number" value={formData.grad_year} onChange={v => setFormData({...formData, grad_year: v})} required placeholder="2024" min="1900" max="2100" />
               <InputField label="Assigned Employer" value={formData.current_employer} onChange={v => setFormData({...formData, current_employer: v})} placeholder="Global Tech Ltd" />
               <InputField label="Operational Position" value={formData.position} onChange={v => setFormData({...formData, position: v})} placeholder="Lead Engineer" />
             </div>
@@ -216,7 +224,7 @@ const AlumniManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filtered.length === 0 ? (
+                  {!Array.isArray(filtered) || filtered.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-8 py-20 text-center">
                          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-white/10 mx-auto mb-6 border border-white/5">
@@ -309,11 +317,12 @@ const AlumniManagement = () => {
   );
 };
 
-const InputField = ({ label, value, onChange, type = "text", required = false, placeholder = "" }) => (
+const InputField = ({ label, value, onChange, type = "text", required = false, placeholder = "", min, max }) => (
   <div className="space-y-2">
     <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">{label}</label>
     <input
       type={type} required={required} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      min={min} max={max}
       className="glass-input w-full"
     />
   </div>

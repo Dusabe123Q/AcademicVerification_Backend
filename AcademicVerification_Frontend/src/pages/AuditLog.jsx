@@ -39,7 +39,16 @@ const AuditLog = () => {
   const filteredLogs = logs.filter(log => {
     const matchesSearch = log.details.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          log.action.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAction = filterAction === 'ALL' || log.action.includes(filterAction);
+    
+    if (filterAction === 'ALL') return matchesSearch;
+
+    const action = log.action.toUpperCase();
+    const matchesAction = 
+        (filterAction === 'CREATE' && (action.includes('CREATE') || action.includes('REGISTRATION') || action.includes('IMPORT') || action.includes('ISSUE'))) ||
+        (filterAction === 'UPDATE' && (action.includes('UPDATE') || action.includes('GRADUATION') || action.includes('SYNC') || action.includes('BACKUP'))) ||
+        (filterAction === 'DELETE' && (action.includes('DELETE') || action.includes('REVOKE'))) ||
+        (filterAction === 'LOGIN' && action.includes('LOGIN'));
+
     return matchesSearch && matchesAction;
   });
 
@@ -92,7 +101,7 @@ const AuditLog = () => {
                 <div className="space-y-4">
                     <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Action Protocol</label>
                     <div className="grid grid-cols-1 gap-2">
-                        {['ALL', 'CREATE', 'UPDATE', 'DELETE'].map((action) => (
+                        {['ALL', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN'].map((action) => (
                             <button
                                 key={action}
                                 onClick={() => setFilterAction(action)}

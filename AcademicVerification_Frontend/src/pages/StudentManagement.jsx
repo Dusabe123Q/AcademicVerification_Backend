@@ -3,7 +3,8 @@ import api from '../services/api';
 import { 
   Users, UserPlus, GraduationCap, Search, Filter, 
   CheckCircle, Clock, Mail, Phone, BookOpen,
-  ShieldCheck, ArrowRight, Activity, Zap
+  ShieldCheck, ArrowRight, Activity, Zap, AlertCircle,
+  Edit3, Trash2, Save, X
 } from 'lucide-react';
 
 const StudentManagement = () => {
@@ -12,9 +13,15 @@ const StudentManagement = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addError, setAddError] = useState(null);
   const [newStudent, setNewStudent] = useState({
     name: '', email: '', phone: '', registrationNumber: '', faculty: '', program: '', dob: ''
   });
+
+  // Edit State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editError, setEditError] = useState(null);
 
   useEffect(() => {
     fetchStudents();
@@ -44,6 +51,7 @@ const StudentManagement = () => {
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
+    setAddError(null);
     try {
       await api.post('/admin/students', newStudent);
       setShowAddModal(false);
@@ -51,6 +59,31 @@ const StudentManagement = () => {
       setNewStudent({ name: '', email: '', phone: '', registrationNumber: '', faculty: '', program: '', dob: '' });
     } catch (error) {
       console.error('Insertion failed:', error);
+      setAddError(error.response?.data?.message || error.response?.data?.error || 'System integration failure.');
+    }
+  };
+
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    setEditError(null);
+    try {
+      await api.put(`/admin/students/${editingStudent.student_id}`, editingStudent);
+      setShowEditModal(false);
+      fetchStudents();
+    } catch (error) {
+      console.error('Update failed:', error);
+      setEditError(error.response?.data?.message || error.response?.data?.error || 'Update failed.');
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`PERMANENT DELETION PROTOCOL: Are you sure you want to purge ${name} from the registry?`)) return;
+    try {
+      await api.delete(`/admin/students/${id}`);
+      fetchStudents();
+    } catch (error) {
+      console.error('Deletion failure:', error);
+      alert('Strategic failure during deletion protocol.');
     }
   };
 
@@ -80,7 +113,7 @@ const StudentManagement = () => {
           <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Academic Lifecycle Management & Oversight</p>
         </div>
         <button 
-          onClick={() => setShowAddModal(true)}
+          onClick={() => { setShowAddModal(true); setAddError(null); }}
           className="btn-primary flex items-center justify-center gap-3"
         >
           <UserPlus size={20} strokeWidth={3} /> Register New Entity
@@ -219,17 +252,29 @@ const StudentManagement = () => {
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover/row:opacity-100 transition-all scale-95 group-hover/row:scale-100">
                         {student.status === 'STUDENT' && (
-                          <button 
-                            onClick={() => handleGraduate(student.student_id)}
-                            className="p-3 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white rounded-2xl border border-green-500/20 transition-all shadow-sm flex items-center gap-2 group/btn"
-                            title="Execute Migration to Alumni"
-                          >
-                            <GraduationCap size={16} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform" /> 
-                            <span className="text-[10px] font-black uppercase tracking-widest pr-1">Graduate</span>
-                          </button>
+                          <>
+                            <button 
+                              onClick={() => handleGraduate(student.student_id)}
+                              className="p-3 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white rounded-2xl border border-green-500/20 transition-all shadow-sm flex items-center gap-2 group/btn"
+                              title="Graduate Student"
+                            >
+                              <GraduationCap size={16} strokeWidth={2.5} /> 
+                            </button>
+                            <button 
+                              onClick={() => { setEditingStudent({...student}); setShowEditModal(true); setEditError(null); }}
+                              className="p-3 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-2xl border border-blue-500/20 transition-all shadow-sm"
+                              title="Edit Identity"
+                            >
+                              <Edit3 size={16} strokeWidth={2.5} />
+                            </button>
+                          </>
                         )}
-                        <button className="p-3 bg-white/5 text-white/20 hover:text-white rounded-2xl border border-white/10 transition-all">
-                            <ArrowRight size={18} strokeWidth={2.5} />
+                        <button 
+                          onClick={() => handleDelete(student.student_id, student.name)}
+                          className="p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all shadow-sm"
+                          title="Purge Record"
+                        >
+                          <Trash2 size={16} strokeWidth={2.5} />
                         </button>
                       </div>
                     </td>
@@ -246,6 +291,19 @@ const StudentManagement = () => {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowAddModal(false)} />
           <div className="glass-card max-w-2xl w-full p-10 relative z-10 animate-in zoom-in-95 duration-300">
             <h2 className="text-3xl font-black text-white tracking-tighter mb-8 border-b border-white/10 pb-6">Integrate New Entity</h2>
+            
+            {addError && (
+              <div className="bg-rose-500/10 p-5 rounded-2xl border border-rose-500/20 mb-8 flex items-start gap-4 animate-in slide-in-from-top-4">
+                 <div className="p-2 bg-rose-500/20 rounded-xl text-rose-400">
+                    <AlertCircle size={18} />
+                 </div>
+                 <div>
+                    <h4 className="text-xs font-black text-rose-400 uppercase tracking-widest mb-1">Registration Failure</h4>
+                    <p className="text-rose-200/60 text-[11px] font-bold leading-tight">{addError}</p>
+                 </div>
+              </div>
+            )}
+
             <form onSubmit={handleAddStudent} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Identity Name</label>
@@ -260,12 +318,84 @@ const StudentManagement = () => {
                 <input type="text" required value={newStudent.registrationNumber} onChange={(e) => setNewStudent({...newStudent, registrationNumber: e.target.value})} className="glass-input w-full" placeholder="REG-####-####" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Faculty / Department</label>
-                <input type="text" required value={newStudent.faculty} onChange={(e) => setNewStudent({...newStudent, faculty: e.target.value})} className="glass-input w-full" placeholder="Science & Tech" />
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Communication Vector (Phone)</label>
+                <input type="text" required value={newStudent.phone} onChange={(e) => setNewStudent({...newStudent, phone: e.target.value})} className="glass-input w-full" placeholder="+250..." />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <button type="submit" className="btn-primary w-full mt-6 py-4 flex items-center justify-center gap-3">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Faculty / Department</label>
+                <input type="text" required value={newStudent.faculty} onChange={(e) => setNewStudent({...newStudent, faculty: e.target.value})} className="glass-input w-full" placeholder="Engineering / Computing" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Academic Program</label>
+                <input type="text" required value={newStudent.program} onChange={(e) => setNewStudent({...newStudent, program: e.target.value})} className="glass-input w-full" placeholder="Computer Science" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Date of Birth</label>
+                <input type="date" value={newStudent.dob} onChange={(e) => setNewStudent({...newStudent, dob: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2 md:col-span-1 border-t border-white/5 pt-4">
+                <button type="submit" className="btn-primary w-full py-4 flex items-center justify-center gap-3">
                    Confirm System Insertion <ShieldCheck size={20} strokeWidth={3} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Student Modal */}
+      {showEditModal && editingStudent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowEditModal(false)} />
+          <div className="glass-card max-w-2xl w-full p-10 relative z-10 animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
+              <h2 className="text-3xl font-black text-white tracking-tighter">Modify Entity: {editingStudent.name}</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/10 rounded-xl text-white/40 hover:text-white transition-all">
+                <X size={24} />
+              </button>
+            </div>
+            
+            {editError && (
+              <div className="bg-rose-500/10 p-5 rounded-2xl border border-rose-500/20 mb-8 flex items-start gap-4">
+                 <div className="p-2 bg-rose-500/20 rounded-xl text-rose-400">
+                    <AlertCircle size={18} />
+                 </div>
+                 <p className="text-rose-200/60 text-[11px] font-bold">{editError}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateStudent} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Identity Name</label>
+                <input type="text" required value={editingStudent.name} onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Official Email</label>
+                <input type="email" required value={editingStudent.email} onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Registry Hash (Reg No)</label>
+                <input type="text" required value={editingStudent.registrationNumber} onChange={(e) => setEditingStudent({...editingStudent, registrationNumber: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Communication Vector (Phone)</label>
+                <input type="text" required value={editingStudent.phone} onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Faculty / Department</label>
+                <input type="text" required value={editingStudent.faculty} onChange={(e) => setEditingStudent({...editingStudent, faculty: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Academic Program</label>
+                <input type="text" required value={editingStudent.program} onChange={(e) => setEditingStudent({...editingStudent, program: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Date of Birth</label>
+                <input type="date" value={editingStudent.dob || ''} onChange={(e) => setEditingStudent({...editingStudent, dob: e.target.value})} className="glass-input w-full" />
+              </div>
+              <div className="space-y-2 md:col-span-1 border-t border-white/5 pt-4">
+                <button type="submit" className="btn-primary w-full py-4 flex items-center justify-center gap-3">
+                   Synchronize Changes <Save size={20} strokeWidth={3} />
                 </button>
               </div>
             </form>

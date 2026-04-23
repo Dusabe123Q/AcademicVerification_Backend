@@ -4,11 +4,11 @@ import { AuthContext } from '../contexts/AuthContext';
 import NotificationPanel from './NotificationPanel';
 import { 
   LayoutDashboard, Users, UserCheck, GraduationCap, 
-  UserCircle, LogOut, Search, Menu, X, Database 
+  UserCircle, LogOut, Search, Menu, X, Database, ShieldCheck
 } from 'lucide-react';
 
 const Navbar = () => {
-  const { isAuthenticated, logout, user } = useContext(AuthContext);
+  const { isAuthenticated, logout, role } = useContext(AuthContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,8 +62,9 @@ const Navbar = () => {
           {isAuthenticated && (
             <div className="hidden lg:flex items-center space-x-2">
               {navItem('/dashboard', <LayoutDashboard size={18} />, 'Dashboard')}
-              {user?.role === 'ADMIN' && navItem('/students', <Users size={18} />, 'Students')}
-              {user?.role === 'ADMIN' && navItem('/audit', <Database size={18} />, 'System Ledger')}
+              {role === 'ROLE_ADMIN' && navItem('/students', <Users size={18} />, 'Students')}
+              {role === 'ROLE_ADMIN' && navItem('/users', <ShieldCheck size={18} />, 'User Access')}
+              {role === 'ROLE_ADMIN' && navItem('/audit', <Database size={18} />, 'System Ledger')}
               {navItem('/alumni', <UserCheck size={18} />, 'Alumni Records')}
               {navItem('/verifications', <Search size={18} />, 'Verifications')}
             </div>
@@ -90,8 +91,7 @@ const Navbar = () => {
                       <UserCircle size={24} />
                     </div>
                     <div className="hidden xl:flex flex-col items-start">
-                      <span className="text-sm font-bold text-white leading-none capitalize">{user?.username}</span>
-                      <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider mt-1">{user?.role}</span>
+                      <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider mt-1">{role ? role.replace('ROLE_', '') : 'User'}</span>
                     </div>
                   </button>
 
@@ -122,8 +122,9 @@ const Navbar = () => {
           <div className="lg:hidden mt-4 glass-card border-white/10 p-6 animate-in slide-in-from-top-5 duration-300">
             <div className="flex flex-col gap-4">
               <MobileNavItem path="/dashboard" icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
-              {user?.role === 'ADMIN' && <MobileNavItem path="/students" icon={<Users size={20} />} label="Students" onClick={() => setIsMobileMenuOpen(false)} />}
-              {user?.role === 'ADMIN' && <MobileNavItem path="/audit" icon={<Database size={20} />} label="System Ledger" onClick={() => setIsMobileMenuOpen(false)} />}
+              {role === 'ROLE_ADMIN' && <MobileNavItem path="/students" icon={<Users size={20} />} label="Students" onClick={() => setIsMobileMenuOpen(false)} />}
+              {role === 'ROLE_ADMIN' && <MobileNavItem path="/users" icon={<ShieldCheck size={20} />} label="User Access" onClick={() => setIsMobileMenuOpen(false)} />}
+              {role === 'ROLE_ADMIN' && <MobileNavItem path="/audit" icon={<Database size={20} />} label="System Ledger" onClick={() => setIsMobileMenuOpen(false)} />}
               <MobileNavItem path="/alumni" icon={<UserCheck size={20} />} label="Alumni" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavItem path="/verifications" icon={<Search size={20} />} label="Verifications" onClick={() => setIsMobileMenuOpen(false)} />
               <div className="h-px bg-white/5 my-2" />

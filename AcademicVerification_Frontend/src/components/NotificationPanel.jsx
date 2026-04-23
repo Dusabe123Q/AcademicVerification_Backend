@@ -16,8 +16,9 @@ const NotificationPanel = () => {
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/notifications');
-      setNotifications(response.data);
-      setUnreadCount(response.data.filter(n => !n.isRead).length);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.isRead).length);
     } catch (error) {
       console.error('Core Logic Failure (Notifications):', error);
     }
