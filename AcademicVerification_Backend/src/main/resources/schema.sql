@@ -5,8 +5,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. Table: user
 CREATE TABLE IF NOT EXISTS `user` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `username` VARCHAR(255) NOT NULL,
-    `email` VARCHAR(255),
+    `username` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191),
     `phone` VARCHAR(255),
     `password` VARCHAR(255) NOT NULL,
     `role` VARCHAR(50) NOT NULL
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS `student` (
     `name` VARCHAR(255) NOT NULL,
     `dob` DATE,
     `program` VARCHAR(255),
-    `registration_number` VARCHAR(255) NOT NULL UNIQUE,
-    `email` VARCHAR(255) NOT NULL,
+    `registration_number` VARCHAR(191) NOT NULL UNIQUE,
+    `email` VARCHAR(191) NOT NULL,
     `phone` VARCHAR(255) NOT NULL,
     `faculty` VARCHAR(255) NOT NULL,
     `status` VARCHAR(50) DEFAULT 'STUDENT'
@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS `student` (
 -- 3. Table: alumni
 CREATE TABLE IF NOT EXISTS `alumni` (
     `alumni_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(255),
-    `email` VARCHAR(255),
+    `name` VARCHAR(191),
+    `email` VARCHAR(191),
     `phone` VARCHAR(255),
     `grad_year` INT,
     `career_info` VARCHAR(255),
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `credential` (
     `credential_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `credential_type` VARCHAR(255),
     `issue_date` DATE,
-    `serial_number` VARCHAR(255) UNIQUE,
+    `serial_number` VARCHAR(191) UNIQUE,
     `student_id` BIGINT,
     CONSTRAINT `FK_credential_student` FOREIGN KEY (`student_id`) REFERENCES `student` (`student_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
