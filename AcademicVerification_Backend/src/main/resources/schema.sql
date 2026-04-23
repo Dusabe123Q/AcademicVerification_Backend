@@ -1,5 +1,6 @@
 -- Academic Verification System - Database Schema
 -- Target: MySQL
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. Table: user
 CREATE TABLE IF NOT EXISTS `user` (
@@ -113,3 +114,5 @@ INSERT INTO `alumni` (name, email, phone, grad_year, career_info, current_employ
  (SELECT student_id FROM student WHERE registration_number = 'UR/CST/2022/001'),
  (SELECT id FROM user WHERE email = 'alumni@gmail.com')
 );
+
+SET FOREIGN_KEY_CHECKS = 1;
