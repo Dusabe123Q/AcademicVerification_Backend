@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `message` VARCHAR(255) NOT NULL,
     `is_read` BOOLEAN DEFAULT FALSE,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `user_id` BIGINT NOT NULL,
     CONSTRAINT `FK_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -83,14 +83,14 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `action` VARCHAR(255),
     `details` VARCHAR(255),
-    `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP
+    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 8. Table: verification
 CREATE TABLE IF NOT EXISTS `verification` (
     `verification_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `status` VARCHAR(255),
-    `request_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `request_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `credential_id` BIGINT,
     CONSTRAINT `FK_verification_credential` FOREIGN KEY (`credential_id`) REFERENCES `credential` (`credential_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
