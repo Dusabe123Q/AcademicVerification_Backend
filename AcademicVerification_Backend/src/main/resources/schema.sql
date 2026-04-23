@@ -1,6 +1,7 @@
 -- Academic Verification System - Database Schema
 -- Target: MySQL
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS `verification`, `audit_logs`, `notifications`, `employment_history`, `credential`, `alumni`, `student`, `user`;
 
 -- 1. Table: user
 CREATE TABLE IF NOT EXISTS `user` (
