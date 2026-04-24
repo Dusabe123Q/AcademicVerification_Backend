@@ -20,7 +20,7 @@ public class JwtService {
 
     // Using a hardcoded secret for now. In production, use environment variables!
     // Example format, at least 256-bit key
-    @Value("${jwt.secret:MzQ0RTYzNTI2NjU1NkE1ODZFMzI3MjM1NzUzODc4MkY0MTNGNDQyODQ3MkI0QjYyNTA2NDUzNjc1NjZCNTk3MFA=}")
+    @Value("${jwt.secret:MzQ0RTYzNTI2NjU1NkE1ODZFMzI3MjM1NzUzODc4MkY0MTNGNDQyODQ3MkI0QjYyNTA2NDUzNjc1NjZCNTk3MFA0NGU2MzUyNjY1NTZhNTg2ZTMyNzIzNTc1Mzg3ODJmNDEzZjQ0Mjg0NzJiNGI2MjUwNjQ1MzY3NTY2YjU5NzA=}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 1 day in ms
