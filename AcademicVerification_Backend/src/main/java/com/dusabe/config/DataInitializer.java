@@ -3,13 +3,12 @@ package com.dusabe.config;
 import com.dusabe.entity.*;
 import com.dusabe.repository.*;
 import com.dusabe.enums.Role;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 @Configuration
@@ -27,212 +26,81 @@ public class DataInitializer {
             PasswordEncoder passwordEncoder) {
         return args -> {
             String adminEmail = "marierosedusabe58@gmail.com";
+            String adminUsername = "admin";
+            String defaultPass = "admin123";
             
-            // ─── PART 1: Cleanup & Synchronize Admin by Email ────────────────
-            List<User> emailUsers = userRepository.findAllByEmail(adminEmail);
-            User primaryAdmin = null;
+            // ─── ENSURE ADMIN EXISTS ─────────────────────────────────────────
+            User admin = userRepository.findByUsername(adminUsername).orElseGet(() -> {
+                User u = new User();
+                u.setUsername(adminUsername);
+                u.setEmail(adminEmail);
+                u.setRole(Role.ADMIN);
+                return u;
+            });
             
-            if (!emailUsers.isEmpty()) {
-                primaryAdmin = emailUsers.get(0);
-                // Delete any duplicate users with the same email
-                if (emailUsers.size() > 1) {
-                    for (int i = 1; i < emailUsers.size(); i++) {
-                        userRepository.delete(emailUsers.get(i));
-                    }
-                    System.out.println("Cleaned up " + (emailUsers.size() - 1) + " duplicate Admin records by email.");
-                }
-                primaryAdmin.setPassword(passwordEncoder.encode("admin123"));
-                primaryAdmin.setRole(Role.ADMIN);
-                primaryAdmin = userRepository.save(primaryAdmin);
-                System.out.println("Primary Admin (Email) synchronized: " + adminEmail);
-            } else {
-                primaryAdmin = new User(adminEmail, passwordEncoder.encode("admin123"), Role.ADMIN);
-                primaryAdmin.setEmail(adminEmail);
-                primaryAdmin = userRepository.save(primaryAdmin);
-                System.out.println("New Admin created (Email): " + adminEmail);
+            admin.setPassword(passwordEncoder.encode(defaultPass));
+            admin.setRole(Role.ADMIN);
+            admin.setEmail(adminEmail);
+            userRepository.save(admin);
+            System.out.println(">>> ADMIN SYNCED: " + adminUsername + " / " + defaultPass);
+
+            // ─── ENSURE DEMO USERS ──────────────────────────────────────────
+            String[][] demoUsers = {
+                {"alumni", "alumni@gmail.com", "alumni123", "ALUMNI"},
+                {"employer", "employer@demo.com", "employer123", "EMPLOYER"}
+            };
+
+            for (String[] userData : demoUsers) {
+                User u = userRepository.findByUsername(userData[0]).orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setUsername(userData[0]);
+                    newUser.setEmail(userData[1]);
+                    newUser.setRole(Role.valueOf(userData[3]));
+                    return newUser;
+                });
+                u.setPassword(passwordEncoder.encode(userData[2]));
+                userRepository.save(u);
+                System.out.println(">>> USER SYNCED: " + userData[0] + " / " + userData[2]);
             }
 
-            // ─── PART 2: Cleanup & Synchronize Admin by Username 'admin' ──────
-            List<User> usernameUsers = userRepository.findAllByUsername("admin");
-            if (!usernameUsers.isEmpty()) {
-                // If the user 'admin' is different from primaryAdmin, clean up
-                for (User u : usernameUsers) {
-                    if (!u.getId().equals(primaryAdmin.getId())) {
-                        userRepository.delete(u);
-                    }
-                }
-                System.out.println("Cleaned up duplicate 'admin' username records.");
-            }
-            
-            // Ensure the main admin ALSO has the username 'admin' if it doesn't conflict
-            primaryAdmin.setUsername("admin");
-            primaryAdmin = userRepository.save(primaryAdmin);
-            System.out.println("Main Admin username set to 'admin'");
+            // ─── ENSURE DEMO STUDENT & ALUMNI PROFILE ───────────────────────
+            Student demoStudent = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> {
+                Student s = new Student();
+                s.setName("Dusabe Marie ROSE");
+                s.setEmail(adminEmail);
+                s.setRegistrationNumber("24RP001");
+                s.setFaculty("ICT");
+                s.setProgram("Computer Science");
+                s.setPhone("0780000000");
+                s.setDob(java.time.LocalDate.of(2000, 1, 1));
+                s.setStatus(com.dusabe.enums.StudentStatus.STUDENT);
+                return studentRepository.save(s);
+            });
 
-            // ─── PART 3: Ensure Admin has an Alumni profile ──────────────────
-            if (alumniRepository.findByUser(primaryAdmin).isEmpty()) {
+            if (alumniRepository.findByUser(admin).isEmpty()) {
                 Alumni alumni = new Alumni();
-                alumni.setUser(primaryAdmin);
+                alumni.setUser(admin);
                 alumni.setName("Dusabe Marie ROSE");
                 alumni.setEmail(adminEmail);
                 alumni.setGrad_year(2023);
                 alumni.setCareer_info("Academic Systems Specialist");
                 alumni.setCurrent_employer("Global Education Tech");
                 alumni.setPosition("Senior System Auditor");
-                
-                // Link to a student record for credentials
-                Student student = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> 
-                    createStudent(studentRepository, "Dusabe Marie ROSE", adminEmail, "24RP001", "ICT", "Computer Science")
-                );
-                alumni.setStudent(student);
-                
+                alumni.setStudent(demoStudent);
                 alumniRepository.save(alumni);
-                System.out.println("Admin-linked Alumni profile confirmed for Dusabe Marie ROSE.");
-                
-                // Ensure credentials exist for this student
-                if (credentialRepository.findByStudent(student).isEmpty()) {
-                    createCredential(credentialRepository, student, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
-                }
             }
 
-            // ─── PART 3.5: Ensure Default Alumni has everything linked ──────
-            // We will use both "alumni@gmail.com" AND "alumni" for maximum compatibility
-            String[] testUsernames = {"alumni@gmail.com", "alumni", "employer"};
-            for (String uname : testUsernames) {
-                User user = userRepository.findByUsername(uname).orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setUsername(uname);
-                    newUser.setEmail(uname.contains("@") ? uname : uname + "@demo.com");
-                    newUser.setRole(uname.equals("employer") ? Role.EMPLOYER : Role.ALUMNI);
-                    newUser.setPassword(passwordEncoder.encode(uname.equals("employer") ? "employer123" : "alumni123"));
-                    return userRepository.save(newUser);
-                });
-
-                // Sync password for demo
-                user.setPassword(passwordEncoder.encode(uname.equals("employer") ? "employer123" : "alumni123"));
-                userRepository.save(user);
-
-                if (user.getRole() == Role.EMPLOYER) {
-                    System.out.println(">>> EMPLOYER SYNCED: " + uname + " / employer123");
-                    continue; 
-                }
-
-                final User finalUser = user; // Fix: effectively final for lambda
-                Alumni alumni = alumniRepository.findByUser(finalUser).orElseGet(() -> {
-                    Alumni a = new Alumni();
-                    a.setUser(finalUser);
-                    return a;
-                });
-
-                alumni.setName("Dusabe Marie ROSE");
-                alumni.setEmail(uname.contains("@") ? uname : "alumni@gmail.com");
-                alumni.setGrad_year(2023);
-                alumni.setCareer_info("Senior Software Engineer & Alumni Lead");
-                alumni.setPosition("Lead Developer");
-                alumni.setCurrent_employer("Global Tech Solutions");
-                
-                // Link to student record so credentials show up (Prioritize "alumni" username for the demo)
-                if (uname.equals("alumni")) {
-                    Student s = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> 
-                        createStudent(studentRepository, "Dusabe Marie ROSE", "alumni@gmail.com", "24RP001", "ICT", "Computer Science")
-                    );
-                    
-                    // CLEANUP: Detach this student from ANY other alumni to avoid UK_alumni_student
-                    List<Alumni> allWithStudent = alumniRepository.findAll().stream()
-                        .filter(a -> a.getStudent() != null && a.getStudent().getStudent_id().equals(s.getStudent_id()))
-                        .collect(java.util.stream.Collectors.toList());
-                    for (Alumni a : allWithStudent) {
-                        a.setStudent(null);
-                        alumniRepository.save(a);
-                    }
-                    
-                    // Force link to THIS user
-                    alumni.setStudent(s);
-                    if (credentialRepository.findByStudent(s).isEmpty()) {
-                        createCredential(credentialRepository, s, "SN-DUS-2023-A1", "Bachelor of Science in Information Technology");
-                    }
-                }
-                alumniRepository.save(alumni);
-
-
-                System.out.println(">>> DEMO USER SYNCED: " + uname + " / alumni123");
+            // ─── ENSURE CREDENTIALS ─────────────────────────────────────────
+            if (credentialRepository.findByStudent(demoStudent).isEmpty()) {
+                Credential c = new Credential();
+                c.setStudent(demoStudent);
+                c.setSerial_number("SN-DUS-2023-A1");
+                c.setCredential_type("Bachelor of Science in Information Technology");
+                c.setIssue_date(java.time.LocalDate.now());
+                credentialRepository.save(c);
             }
 
-
-
-
-
-            // ─── PART 4: Robust Demo Seed Data (Verifications, Logs, Notifications) ──
-            System.out.println("Synchronizing Master Demo Ledger...");
-            
-            // Seed Notifications for ALL users to ensure UI is populated
-            List<User> allUsers = userRepository.findAll();
-            for (User u : allUsers) {
-                if (notificationRepository.findByUserOrderByCreatedAtDesc(u).isEmpty()) {
-                    notificationRepository.save(new Notification(u, "Welcome to the Academic Oversight Dashboard. Your system is 100% operational."));
-                    notificationRepository.save(new Notification(u, "Your profile was successfully synchronized with the University Central Node."));
-                    notificationRepository.save(new Notification(u, "Notification: Your academic credential has been verified by an external auditor."));
-                    notificationRepository.save(new Notification(u, "System Sync: Latest security patches applied to your academic node."));
-                }
-            }
-
-            // Seed Verification Engine (History) specifically for the demo student
-            Student demoStudent = studentRepository.findByRegistrationNumber("24RP001").orElse(null);
-            if (demoStudent != null) {
-                List<Credential> studentCreds = credentialRepository.findByStudent(demoStudent);
-                if (!studentCreds.isEmpty()) {
-                    Credential mainCred = studentCreds.get(0);
-                    // Only seed if no verifications exist for this specific credential
-                    if (verificationRepository.findByCredential(mainCred).isEmpty()) {
-                        System.out.println("Seeding Verification Audit History for Demo Student...");
-                        createVerification(verificationRepository, mainCred, "APPROVED");
-                        createVerification(verificationRepository, mainCred, "PENDING");
-                        createVerification(verificationRepository, mainCred, "APPROVED");
-                    }
-                }
-            }
-
-
-            // Seed Audit Logs for Professional View
-            if (auditLogRepository.count() < 10) {
-                auditLogRepository.save(new AuditLog("SYSTEM_BOOT", "Academic Verification Node - Production Sync Active"));
-                auditLogRepository.save(new AuditLog("LOGIN_SUCCESS", "User Dusabe Marie ROSE authenticated session"));
-                auditLogRepository.save(new AuditLog("CREDENTIAL_QUERY", "External verification request for SN-DUS-2023-A1"));
-                auditLogRepository.save(new AuditLog("PROFILE_UPDATE", "Professional career info synchronized for Alumni ID: " + primaryAdmin.getId()));
-            }
-            
-            System.out.println("Master Demo Synchronization Completed.");
-
+            System.out.println(">>> Master Demo Synchronization Completed.");
         };
-    }
-
-    private void createVerification(VerificationRepository repo, Credential credential, String status) {
-        Verification v = new Verification();
-        v.setCredential(credential);
-        v.setStatus(status);
-        v.setRequest_date(java.time.LocalDateTime.now().minusDays(new java.util.Random().nextInt(10)));
-        repo.save(v);
-    }
-
-    private Student createStudent(StudentRepository repo, String name, String email, String reg, String faculty, String program) {
-        Student s = new Student();
-        s.setName(name);
-        s.setEmail(email);
-        s.setRegistrationNumber(reg);
-        s.setFaculty(faculty);
-        s.setProgram(program);
-        s.setPhone("0780000000");
-        s.setDob(java.time.LocalDate.of(2000, 1, 1));
-        s.setStatus(com.dusabe.enums.StudentStatus.STUDENT);
-        return repo.save(s);
-    }
-
-    private void createCredential(CredentialRepository repo, Student student, String serial, String degree) {
-        Credential c = new Credential();
-        c.setStudent(student);
-        c.setSerial_number(serial);
-        c.setCredential_type(degree);
-        c.setIssue_date(java.time.LocalDate.now());
-        repo.save(c);
     }
 }
