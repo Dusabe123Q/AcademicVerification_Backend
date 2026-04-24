@@ -29,19 +29,16 @@ public class DataInitializer {
             String adminUsername = "admin";
             String defaultPass = "admin123";
             
-            // ─── ENSURE ADMIN EXISTS ─────────────────────────────────────────
-            User admin = userRepository.findByUsername(adminUsername).orElseGet(() -> {
-                User u = new User();
-                u.setUsername(adminUsername);
-                u.setEmail(adminEmail);
-                u.setRole(Role.ADMIN);
-                return u;
-            });
+            // ─── ENSURE ADMIN EXISTS (FORCE FRESH) ──────────────────────────
+            userRepository.findByUsername(adminUsername).ifPresent(userRepository::delete);
             
-            admin.setPassword(passwordEncoder.encode(defaultPass));
-            admin.setRole(Role.ADMIN);
+            User admin = new User();
+            admin.setUsername(adminUsername);
             admin.setEmail(adminEmail);
+            admin.setRole(Role.ADMIN);
+            admin.setPassword(passwordEncoder.encode(defaultPass));
             userRepository.save(admin);
+            System.out.println(">>> ADMIN FORCE CREATED: " + adminUsername + " / " + defaultPass);
             System.out.println(">>> ADMIN SYNCED: " + adminUsername + " / " + defaultPass);
 
             // ─── ENSURE DEMO USERS ──────────────────────────────────────────
@@ -51,16 +48,15 @@ public class DataInitializer {
             };
 
             for (String[] userData : demoUsers) {
-                User u = userRepository.findByUsername(userData[0]).orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setUsername(userData[0]);
-                    newUser.setEmail(userData[1]);
-                    newUser.setRole(Role.valueOf(userData[3]));
-                    return newUser;
-                });
+                userRepository.findByUsername(userData[0]).ifPresent(userRepository::delete);
+                
+                User u = new User();
+                u.setUsername(userData[0]);
+                u.setEmail(userData[1]);
+                u.setRole(Role.valueOf(userData[3]));
                 u.setPassword(passwordEncoder.encode(userData[2]));
                 userRepository.save(u);
-                System.out.println(">>> USER SYNCED: " + userData[0] + " / " + userData[2]);
+                System.out.println(">>> USER FORCE CREATED: " + userData[0] + " / " + userData[2]);
             }
 
             // ─── ENSURE DEMO STUDENT & ALUMNI PROFILE ───────────────────────
