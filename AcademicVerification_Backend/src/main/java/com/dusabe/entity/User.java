@@ -1,9 +1,10 @@
 package com.dusabe.entity;
 
-import com.dusabe.enums.Role; // 🔥 VERY IMPORTANT (iyi niyo yabuze)
+import com.dusabe.enums.Role;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "users")
 public class User {
 
     @Id
