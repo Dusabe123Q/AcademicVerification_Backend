@@ -54,6 +54,14 @@ public class Alumni {
         this.grad_year = grad_year;
     }
 
+    public void setGradYear(String gradYear) {
+        try {
+            this.grad_year = Integer.parseInt(gradYear);
+        } catch (NumberFormatException e) {
+            this.grad_year = null;
+        }
+    }
+
     public String getCareer_info() {
         return career_info;
     }

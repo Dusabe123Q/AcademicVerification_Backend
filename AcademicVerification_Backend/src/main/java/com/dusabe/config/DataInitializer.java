@@ -1,102 +1,118 @@
 package com.dusabe.config;
 
 import com.dusabe.entity.*;
-import com.dusabe.repository.*;
 import com.dusabe.enums.Role;
+import com.dusabe.enums.StudentStatus;
+import com.dusabe.repository.*;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.List;
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Configuration
-public class DataInitializer {
+public class DataInitializer implements CommandLineRunner {
 
-    @Bean
-    public CommandLineRunner initData(
-            UserRepository userRepository, 
-            AlumniRepository alumniRepository, 
-            StudentRepository studentRepository,
-            CredentialRepository credentialRepository,
-            AuditLogRepository auditLogRepository,
-            NotificationRepository notificationRepository,
-            VerificationRepository verificationRepository,
-            PasswordEncoder passwordEncoder) {
-        return args -> {
-            String adminEmail = "marierosedusabe58@gmail.com";
-            String adminUsername = "admin";
-            String defaultPass = "admin123";
-            
-            // ─── ENSURE ADMIN EXISTS (FORCE FRESH) ──────────────────────────
-            userRepository.findByUsername(adminUsername).ifPresent(userRepository::delete);
-            
+    private final UserRepository userRepository;
+    private final AlumniRepository alumniRepository;
+    private final StudentRepository studentRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public DataInitializer(UserRepository userRepository,
+                           AlumniRepository alumniRepository,
+                           StudentRepository studentRepository,
+                           PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.alumniRepository = alumniRepository;
+        this.studentRepository = studentRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    @Transactional
+    public void run(String... args) throws Exception {
+        initData();
+    }
+
+    private void initData() {
+
+        // ── 1. Admin user ────────────────────────────────────────────────────────
+        if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = new User();
-            admin.setUsername(adminUsername);
-            admin.setEmail(adminEmail);
+            admin.setUsername("admin");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setEmail("admin@rp.ac.rw");
             admin.setRole(Role.ADMIN);
-            admin.setPassword(passwordEncoder.encode(defaultPass));
             userRepository.save(admin);
-            System.out.println(">>> ADMIN FORCE CREATED: " + adminUsername + " / " + defaultPass);
-            System.out.println(">>> ADMIN SYNCED: " + adminUsername + " / " + defaultPass);
+        }
 
-            // ─── ENSURE DEMO USERS ──────────────────────────────────────────
-            String[][] demoUsers = {
-                {"alumni", "alumni@gmail.com", "alumni123", "ALUMNI"},
-                {"employer", "employer@demo.com", "employer123", "EMPLOYER"}
-            };
+        // ── 2. Clean up existing demo data ───────────────────────────────────────
+        // Must break the Student ↔ Alumni relationship before deleting Alumni,
+        // otherwise Hibernate's auto-flush sees a managed Student still referencing
+        // the deleted (transient) Alumni and throws TransientObjectException.
+        String demoAlumni   = "alumni_demo";
+        String demoEmployer = "employer_demo";
 
-            for (String[] userData : demoUsers) {
-                userRepository.findByUsername(userData[0]).ifPresent(userRepository::delete);
-                
-                User u = new User();
-                u.setUsername(userData[0]);
-                u.setEmail(userData[1]);
-                u.setRole(Role.valueOf(userData[3]));
-                u.setPassword(passwordEncoder.encode(userData[2]));
-                userRepository.save(u);
-                System.out.println(">>> USER FORCE CREATED: " + userData[0] + " / " + userData[2]);
-            }
+        for (String username : new String[]{demoAlumni, demoEmployer}) {
+            userRepository.findByUsername(username).ifPresent(existingUser -> {
+                alumniRepository.findByUser(existingUser).ifPresent(existingAlumni -> {
 
-            // ─── ENSURE DEMO STUDENT & ALUMNI PROFILE ───────────────────────
-            Student demoStudent = studentRepository.findByRegistrationNumber("24RP001").orElseGet(() -> {
-                Student s = new Student();
-                s.setName("Dusabe Marie ROSE");
-                s.setEmail(adminEmail);
-                s.setRegistrationNumber("24RP001");
-                s.setFaculty("ICT");
-                s.setProgram("Computer Science");
-                s.setPhone("0780000000");
-                s.setDob(java.time.LocalDate.of(2000, 1, 1));
-                s.setStatus(com.dusabe.enums.StudentStatus.STUDENT);
-                return studentRepository.save(s);
+                    // Break the back-reference on Student before deleting Alumni
+                    Student linkedStudent = existingAlumni.getStudent();
+                    if (linkedStudent != null) {
+                        linkedStudent.setAlumni(null);
+                        studentRepository.save(linkedStudent);
+                    }
+
+                    alumniRepository.delete(existingAlumni);
+                });
+                userRepository.delete(existingUser);
             });
+        }
 
-            if (alumniRepository.findByUser(admin).isEmpty()) {
-                Alumni alumni = new Alumni();
-                alumni.setUser(admin);
-                alumni.setName("Dusabe Marie ROSE");
-                alumni.setEmail(adminEmail);
-                alumni.setGrad_year(2023);
-                alumni.setCareer_info("Academic Systems Specialist");
-                alumni.setCurrent_employer("Global Education Tech");
-                alumni.setPosition("Senior System Auditor");
-                alumni.setStudent(demoStudent);
-                alumniRepository.save(alumni);
-            }
+        // ── 3. Demo users ────────────────────────────────────────────────────────
+        User alumniUser = new User();
+        alumniUser.setUsername(demoAlumni);
+        alumniUser.setPassword(passwordEncoder.encode("password123"));
+        alumniUser.setEmail("demo.alumni@gmail.com");
+        alumniUser.setRole(Role.ALUMNI);
+        User savedAlumniUser = userRepository.save(alumniUser);
 
-            // ─── ENSURE CREDENTIALS ─────────────────────────────────────────
-            if (credentialRepository.findByStudent(demoStudent).isEmpty()) {
-                Credential c = new Credential();
-                c.setStudent(demoStudent);
-                c.setSerial_number("SN-DUS-2023-A1");
-                c.setCredential_type("Bachelor of Science in Information Technology");
-                c.setIssue_date(java.time.LocalDate.now());
-                credentialRepository.save(c);
-            }
+        User employerUser = new User();
+        employerUser.setUsername(demoEmployer);
+        employerUser.setPassword(passwordEncoder.encode("password123"));
+        employerUser.setEmail("demo.employer@gmail.com");
+        employerUser.setRole(Role.EMPLOYER);
+        userRepository.save(employerUser);
 
-            System.out.println(">>> Master Demo Synchronization Completed.");
-        };
+        // ── 4. Student record ────────────────────────────────────────────────────
+        Student student = new Student();
+        student.setName("Demo Student");
+        student.setRegistrationNumber("RP/2026/001");
+        student.setFaculty("Information Technology");
+        student.setProgram("Software Engineering");
+        student.setEmail("demo.student@rp.ac.rw");
+        student.setPhone("0781234567");
+        student.setStatus(StudentStatus.GRADUATED);
+        // alumni back-reference starts null — set it after Alumni is saved
+        Student savedStudent = studentRepository.save(student);
+
+        // ── 5. Alumni record ─────────────────────────────────────────────────────
+        Alumni alumni = new Alumni();
+        alumni.setUser(savedAlumniUser);
+        alumni.setStudent(savedStudent);
+        alumni.setName(savedStudent.getName());
+        alumni.setEmail(savedAlumniUser.getEmail());
+        alumni.setGradYear("2025");          // parsed to Integer inside the setter
+        Alumni savedAlumni = alumniRepository.save(alumni);
+
+        // ── 6. Sync the back-reference on Student ────────────────────────────────
+        // Student.alumni is the inverse side of the @OneToOne (mappedBy = "student").
+        // Hibernate doesn't persist it automatically, but keeping it in sync ensures
+        // any in-session code that reads student.getAlumni() gets the right object
+        // without a second DB round-trip.
+        savedStudent.setAlumni(savedAlumni);
+        studentRepository.save(savedStudent);
+
+        System.out.println(">> Database initialized successfully.");
     }
 }
